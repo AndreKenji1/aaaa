@@ -25,7 +25,7 @@ jobs:
         run: dotnet restore HydroGuard.sln
       - name: Build Release
         run: dotnet build HydroGuard.sln -c Release --no-restore
-      - name: Testes existentes e health checks
+      - name: Testes de API, BDD, contratos JSON Schema e health checks
         run: dotnet test tests/HydroGuard.Tests/HydroGuard.Tests.csproj -c Release --no-build --logger 'trx;LogFileName=tests.trx' --results-directory TestResults --collect:'XPlat Code Coverage'
       - name: Publicar evidências de testes
         if: always()

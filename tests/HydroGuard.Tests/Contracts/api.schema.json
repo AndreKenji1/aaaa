@@ -1,0 +1,146 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "token": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["token"],
+      "properties": {
+        "token": { "type": "string", "pattern": "^[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+$" }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["error", "message"],
+      "properties": {
+        "error": { "const": true },
+        "message": { "type": "string", "minLength": 1 }
+      }
+    },
+    "validationProblem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "title", "status", "errors"],
+      "properties": {
+        "type": { "type": "string", "format": "uri" },
+        "title": { "type": "string", "minLength": 1 },
+        "status": { "const": 400 },
+        "traceId": { "type": "string", "minLength": 1 },
+        "errors": {
+          "type": "object",
+          "minProperties": 1,
+          "additionalProperties": {
+            "type": "array", "minItems": 1,
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "medidor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "nome", "serial", "localizacao"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "nome": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "serial": { "type": "string", "minLength": 1, "maxLength": 50 },
+        "localizacao": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    },
+    "consumo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "medidorId", "litrosConsumidos", "dataRegistro"],
+      "properties": {
+        "id": { "type": "integer", "minimum": 1 },
+        "medidorId": { "type": "integer", "minimum": 1 },
+        "litrosConsumidos": { "type": "number", "minimum": 0 },
+        "dataRegistro": { "type": "string", "format": "date-time" }
+      }
+    },
+    "medidores": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["page", "pageSize", "totalRecords", "items"],
+      "properties": {
+        "page": { "type": "integer", "minimum": 1 },
+        "pageSize": { "type": "integer", "minimum": 1 },
+        "totalRecords": { "type": "integer", "minimum": 0 },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/medidor" } }
+      }
+    },
+    "consumos": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["page", "pageSize", "totalRecords", "items"],
+      "properties": {
+        "page": { "type": "integer", "minimum": 1 },
+        "pageSize": { "type": "integer", "minimum": 1 },
+        "totalRecords": { "type": "integer", "minimum": 0 },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/consumo" } }
+      }
+    },
+    "alerta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["medidorId", "vazamentoDetectado", "severidade", "mensagem"],
+      "properties": {
+        "medidorId": { "type": "integer", "minimum": 1 },
+        "vazamentoDetectado": { "type": "boolean" },
+        "severidade": { "enum": ["Baixa", "Média", "Alta"] },
+        "mensagem": { "type": "string", "minLength": 1 }
+      }
+    },
+    "alertas": { "type": "array", "items": { "$ref": "#/$defs/alerta" } },
+    "esg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["consumoMensal", "consumoMedioDiario", "desperdicioEstimado", "aguaEconomizada", "scoreESG"],
+      "properties": {
+        "consumoMensal": { "type": "number", "minimum": 0 },
+        "consumoMedioDiario": { "type": "number", "minimum": 0 },
+        "desperdicioEstimado": { "type": "number", "minimum": 0 },
+        "aguaEconomizada": { "type": "number", "minimum": 0 },
+        "scoreESG": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "topMedidor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["medidorId", "nome", "totalConsumo"],
+      "properties": {
+        "medidorId": { "type": "integer", "minimum": 1 },
+        "nome": { "type": "string", "minLength": 1 },
+        "totalConsumo": { "type": "number", "minimum": 0 }
+      }
+    },
+    "relatorio": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["topMedidores", "mediaPorPeriodo", "alertasCriticos", "projecaoFutura"],
+      "properties": {
+        "topMedidores": { "type": "array", "maxItems": 5, "items": { "$ref": "#/$defs/topMedidor" } },
+        "mediaPorPeriodo": { "type": "number", "minimum": 0 },
+        "alertasCriticos": { "type": "array", "items": { "$ref": "#/$defs/alerta" } },
+        "projecaoFutura": { "type": "number", "minimum": 0 }
+      }
+    },
+    "health": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "environment", "revision"],
+      "properties": {
+        "status": { "const": "healthy" },
+        "environment": { "type": "string", "minLength": 1 },
+        "revision": { "type": "string", "minLength": 1 }
+      }
+    },
+    "live": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": { "status": { "const": "alive" } }
+    }
+  }
+}

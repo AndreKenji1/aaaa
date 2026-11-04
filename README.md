@@ -39,13 +39,23 @@ Não use `down --volumes` em staging/produção: isso apaga os dados. O pipeline
 
 ### Executar testes
 
+Pré-requisito: SDK .NET 8. Os testes de API e BDD usam um banco InMemory isolado e **não exigem Docker, SQL Server, `.env` ou uma API iniciada manualmente**.
+
+Na raiz do repositório:
+
+```bash
+bash scripts/test.sh
+```
+
+O script restaura as dependências, compila em Release e executa todos os testes, incluindo **8 cenários Gherkin executáveis**, testes de API com **JSON Schema Draft 2020-12** e os 20 testes originais. Gera resultados TRX e cobertura em `TestResults/` e retorna código diferente de zero se uma etapa falhar. Alternativa sem Bash (inclusive no Windows):
+
 ```bash
 dotnet restore HydroGuard.sln
 dotnet build HydroGuard.sln -c Release --no-restore
-dotnet test tests/HydroGuard.Tests/HydroGuard.Tests.csproj -c Release --no-build --logger "trx;LogFileName=tests.trx" --results-directory TestResults
+dotnet test tests/HydroGuard.Tests/HydroGuard.Tests.csproj -c Release --no-build --logger "trx;LogFileName=tests.trx" --results-directory TestResults --collect:"XPlat Code Coverage"
 ```
 
-O projeto `HydroGuard.Tests` tem 20 testes (xUnit, WebApplicationFactory e EF InMemory). Como o InMemory não valida SQL nem migrations, o pipeline também sobe um SQL Server real e executa um smoke test HTTP (`tests/HydroGuard.SmokeTests`), que verifica readiness, frontend, Swagger, 401 anônimo, login JWT e rotas da API.
+Consulte a [documentação de testes](docs/TESTES.md) para os cenários BDD, matriz de todas as operações HTTP, contratos, filtros e execução em CI. Como o InMemory não valida SQL nem migrations, o pipeline também sobe um SQL Server real e executa o smoke HTTP existente (`tests/HydroGuard.SmokeTests`), que verifica readiness, frontend, Swagger, 401 anônimo, login JWT, medidores e ESG.
 
 ## Pipeline CI/CD
 
@@ -53,7 +63,7 @@ Ferramenta: **GitHub Actions**. Registry: **GitHub Container Registry (GHCR)**. 
 
 | Etapa | Onde executa | O que valida / realiza |
 | --- | --- | --- |
-| build-test | Runner GitHub Ubuntu 24.04 | Restore, build Release e 20 testes xUnit, com arquivo TRX e cobertura |
+| build-test | Runner GitHub Ubuntu 24.04 | Restore, build Release, testes de API e contratos JSON Schema, 8 cenários BDD e testes originais, com arquivo TRX e cobertura |
 | container | Runner GitHub Ubuntu 24.04 | Build Docker, Compose com SQL Server real, readiness, frontend, Swagger, 401 anônimo, login JWT, medidores e ESG |
 | publicação | Mesmo job `container`; somente em `main` | Publica a imagem com a tag do commit e obtém a referência imutável por digest SHA-256 |
 | deploy-staging | Runner próprio com label `hydroguard-staging` | Pull da imagem por digest, Compose, smoke test. Não recompila a imagem |
@@ -200,7 +210,7 @@ Os medidores cadastrados em staging não aparecem em produção, e vice-versa: c
 - C# e ASP.NET Core 8; Entity Framework Core 8 com migrations.
 - SQL Server 2022 Express; BCrypt; autenticação JWT.
 - HTML, CSS e JavaScript; Swagger/OpenAPI.
-- xUnit, WebApplicationFactory, EF InMemory e Coverlet.
+- xUnit, WebApplicationFactory, EF InMemory, Reqnroll (Gherkin), JsonSchema.Net e Coverlet.
 - Docker, Docker Compose v2, GitHub Actions, GitHub Container Registry (GHCR) e runners próprios Linux x64.
 - Microsoft Azure (VM Ubuntu 24.04) como host de staging e produção.
 - C#/.NET 8 para todos os testes e para o smoke HTTP; Bash para o deploy.
@@ -215,7 +225,7 @@ Os medidores cadastrados em staging não aparecem em produção, e vice-versa: c
 ├── .env.example
 ├── HydroGuard.sln
 ├── .github/workflows/ci-cd.yml
-├── scripts/            (deploy.sh, setup_env.py)
+├── scripts/            (deploy.sh, setup_env.py, test.sh)
 ├── src/HydroGuard.API/ (API, frontend em wwwroot, migrations)
 ├── tests/              (HydroGuard.Tests e HydroGuard.SmokeTests)
 └── docs/               (documentação técnica e prints)

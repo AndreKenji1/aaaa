@@ -1,5 +1,6 @@
 **/bin/
 **/obj/
+**/*.feature.cs
 .vs/
 .vscode/
 .env
